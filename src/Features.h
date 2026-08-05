@@ -84,6 +84,18 @@
   #define FEATURE_SENDER_MQTT 1
 #endif
 
+// ---- Languages -------------------------------------------------------------
+// Every language compiled in costs roughly 4-5 kB of flash; switching between
+// the compiled-in ones happens at runtime (config field current_lang). The
+// FIRST language enabled here is the fallback when the stored code is unknown.
+// New language -> src/i18n/strings_template.h describes the three steps.
+#ifndef FEATURE_LANG_DE
+  #define FEATURE_LANG_DE 1
+#endif
+#ifndef FEATURE_LANG_EN
+  #define FEATURE_LANG_EN 1
+#endif
+
 // ---- Miscellaneous ---------------------------------------------------------
 #ifndef FEATURE_DISPLAY
   #define FEATURE_DISPLAY 1

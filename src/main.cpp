@@ -11,6 +11,7 @@
 #include "senders/SenderManager.h"
 #include "web/WebPortal.h"
 #include "display/DisplayManager.h"
+#include "i18n/Lang.h"
 #include "net/TimeSync.h"
 #include "net/WifiManager.h"
 
@@ -47,6 +48,7 @@ void setup()
 
 	Config::begin();
 	Log::setLevel(static_cast<LogLevel>(cfg.debug));
+	I18n::begin();      // UI language from cfg.current_lang
 
 	wifi.begin();       // connect as STA or open AP / captive portal
 	TimeSync::begin();

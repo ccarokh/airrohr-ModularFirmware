@@ -3,98 +3,111 @@
 namespace FormLabels {
 
 // Tabs in display order.
-static const char *TABS[] = { "WLAN", "Sensoren", "Datenziele", "Einstellungen" };
+static const Str TABS[] = { Str::TabWifi, Str::TabSensors, Str::TabTargets, Str::TabSettings };
+
+// Shorthands: L = literal label, T = translated label.
+#define L(key, text, tab, grp) { key, text, Str::COUNT, Str::tab, Str::grp }
+#define T(key, id, tab, grp)   { key, nullptr, Str::id, Str::tab, Str::grp }
 
 // Ordered form layout. static_ip/subnet/gateway/dns are deliberately missing here:
 // they are rendered separately in the WLAN tab behind the DHCP/static toggle.
-static const Entry L[] = {
+static const Entry LIST[] = {
 	// --- WLAN ---
-	{ "wlanssid", "WLAN-Name (SSID)", "WLAN", "" },
-	{ "wlanpwd", "WLAN-Passwort", "WLAN", "" },
+	T("wlanssid", FldSsid, TabWifi, COUNT),
+	T("wlanpwd", FldWifiPassword, TabWifi, COUNT),
 
 	// --- Sensors: grouped by type ---
-	{ "sds_read", "SDS011", "Sensoren", "Feinstaub" },
-	{ "pms_read", "Plantower PMSx003", "Sensoren", "Feinstaub" },
-	{ "hpm_read", "Honeywell HPM", "Sensoren", "Feinstaub" },
-	{ "npm_read", "Tera NextPM", "Sensoren", "Feinstaub" },
-	{ "npm_fulltime", "NextPM Dauerbetrieb", "Sensoren", "Feinstaub" },
-	{ "ips_read", "Piera IPS-7100", "Sensoren", "Feinstaub" },
-	{ "ppd_read", "Shinyei PPD42NS", "Sensoren", "Feinstaub" },
-	{ "sps30_read", "Sensirion SPS30", "Sensoren", "Feinstaub" },
-	{ "dht_read", "DHT22", "Sensoren", "Temperatur / Feuchte / Druck" },
-	{ "htu21d_read", "HTU21D", "Sensoren", "Temperatur / Feuchte / Druck" },
-	{ "sht3x_read", "SHT3x", "Sensoren", "Temperatur / Feuchte / Druck" },
-	{ "bmp_read", "BMP180", "Sensoren", "Temperatur / Feuchte / Druck" },
-	{ "bmx280_read", "BMP280 / BME280", "Sensoren", "Temperatur / Feuchte / Druck" },
-	{ "scd30_read", "SCD30 (CO2)", "Sensoren", "Temperatur / Feuchte / Druck" },
-	{ "ds18b20_read", "DS18B20", "Sensoren", "Temperatur / Feuchte / Druck" },
-	{ "dnms_read", "DNMS", "Sensoren", "Lärm" },
-	{ "gps_read", "GPS", "Sensoren", "Position" },
-	{ "temp_correction", "Temperatur-Korrektur (°C)", "Sensoren", "Kalibrierung" },
-	{ "height_above_sealevel", "Höhe über NN (m)", "Sensoren", "Kalibrierung" },
-	{ "dnms_correction", "DNMS-Korrektur (dB)", "Sensoren", "Kalibrierung" },
+	L("sds_read", "SDS011", TabSensors, GrpParticulate),
+	L("pms_read", "Plantower PMSx003", TabSensors, GrpParticulate),
+	L("hpm_read", "Honeywell HPM", TabSensors, GrpParticulate),
+	L("npm_read", "Tera NextPM", TabSensors, GrpParticulate),
+	T("npm_fulltime", FldNpmFulltime, TabSensors, GrpParticulate),
+	L("ips_read", "Piera IPS-7100", TabSensors, GrpParticulate),
+	L("ppd_read", "Shinyei PPD42NS", TabSensors, GrpParticulate),
+	L("sps30_read", "Sensirion SPS30", TabSensors, GrpParticulate),
+	L("dht_read", "DHT22", TabSensors, GrpClimate),
+	L("htu21d_read", "HTU21D", TabSensors, GrpClimate),
+	L("sht3x_read", "SHT3x", TabSensors, GrpClimate),
+	L("bmp_read", "BMP180", TabSensors, GrpClimate),
+	L("bmx280_read", "BMP280 / BME280", TabSensors, GrpClimate),
+	L("scd30_read", "SCD30 (CO2)", TabSensors, GrpClimate),
+	L("ds18b20_read", "DS18B20", TabSensors, GrpClimate),
+	L("dnms_read", "DNMS", TabSensors, GrpNoise),
+	L("gps_read", "GPS", TabSensors, GrpPosition),
+	T("temp_correction", FldTempCorrection, TabSensors, GrpCalibration),
+	T("height_above_sealevel", FldHeightAboveSealevel, TabSensors, GrpCalibration),
+	T("dnms_correction", FldDnmsCorrection, TabSensors, GrpCalibration),
 
 	// --- Data destinations ---
-	{ "send2dusti", "An sensor.community senden", "Datenziele", "sensor.community / Madavi" },
-	{ "ssl_dusti", "sensor.community über HTTPS", "Datenziele", "sensor.community / Madavi" },
-	{ "send2madavi", "An Madavi.de senden", "Datenziele", "sensor.community / Madavi" },
-	{ "ssl_madavi", "Madavi über HTTPS", "Datenziele", "sensor.community / Madavi" },
-	{ "send2mqtt", "An MQTT senden", "Datenziele", "MQTT" },
-	{ "host_mqtt", "Broker (Host)", "Datenziele", "MQTT" },
-	{ "port_mqtt", "Port", "Datenziele", "MQTT" },
-	{ "user_mqtt", "Benutzer", "Datenziele", "MQTT" },
-	{ "pwd_mqtt", "Passwort", "Datenziele", "MQTT" },
-	{ "topic_mqtt", "Topic-Präfix", "Datenziele", "MQTT" },
-	{ "ssl_mqtt", "TLS", "Datenziele", "MQTT" },
-	{ "mqtt_ha_discovery", "Home Assistant Discovery", "Datenziele", "MQTT" },
-	{ "mqtt_intervall_ms", "MQTT-Intervall (ms, 0 = Hauptzyklus)", "Datenziele", "MQTT" },
-	{ "send2influx", "An InfluxDB senden", "Datenziele", "InfluxDB" },
-	{ "host_influx", "Host", "Datenziele", "InfluxDB" },
-	{ "url_influx", "Pfad", "Datenziele", "InfluxDB" },
-	{ "port_influx", "Port", "Datenziele", "InfluxDB" },
-	{ "user_influx", "Benutzer", "Datenziele", "InfluxDB" },
-	{ "pwd_influx", "Passwort", "Datenziele", "InfluxDB" },
-	{ "measurement_name_influx", "Measurement", "Datenziele", "InfluxDB" },
-	{ "ssl_influx", "InfluxDB über HTTPS", "Datenziele", "InfluxDB" },
-	{ "send2custom", "An eigene API senden", "Datenziele", "Eigene API" },
-	{ "host_custom", "Host", "Datenziele", "Eigene API" },
-	{ "url_custom", "Pfad", "Datenziele", "Eigene API" },
-	{ "port_custom", "Port", "Datenziele", "Eigene API" },
-	{ "user_custom", "Benutzer", "Datenziele", "Eigene API" },
-	{ "pwd_custom", "Passwort", "Datenziele", "Eigene API" },
-	{ "ssl_custom", "über HTTPS", "Datenziele", "Eigene API" },
-	{ "send2sensemap", "An OpenSenseMap senden", "Datenziele", "Weitere Dienste" },
-	{ "senseboxid", "senseBox-ID", "Datenziele", "Weitere Dienste" },
-	{ "send2fsapp", "An Feinstaub-App senden", "Datenziele", "Weitere Dienste" },
-	{ "send2aircms", "An aircms.online senden", "Datenziele", "Weitere Dienste" },
-	{ "send2csv", "CSV über USB ausgeben", "Datenziele", "Weitere Dienste" },
+	T("send2dusti", FldSend2Dusti, TabTargets, GrpScMadavi),
+	T("ssl_dusti", FldSslDusti, TabTargets, GrpScMadavi),
+	T("send2madavi", FldSend2Madavi, TabTargets, GrpScMadavi),
+	T("ssl_madavi", FldSslMadavi, TabTargets, GrpScMadavi),
+	T("send2mqtt", FldSend2Mqtt, TabTargets, GrpMqtt),
+	T("host_mqtt", FldBrokerHost, TabTargets, GrpMqtt),
+	T("port_mqtt", FldPort, TabTargets, GrpMqtt),
+	T("user_mqtt", FldUser, TabTargets, GrpMqtt),
+	T("pwd_mqtt", FldPassword, TabTargets, GrpMqtt),
+	T("topic_mqtt", FldTopicPrefix, TabTargets, GrpMqtt),
+	T("ssl_mqtt", FldTls, TabTargets, GrpMqtt),
+	T("mqtt_ha_discovery", FldHaDiscovery, TabTargets, GrpMqtt),
+	T("mqtt_intervall_ms", FldMqttInterval, TabTargets, GrpMqtt),
+	T("send2influx", FldSend2Influx, TabTargets, GrpInflux),
+	T("host_influx", FldHost, TabTargets, GrpInflux),
+	T("url_influx", FldPath, TabTargets, GrpInflux),
+	T("port_influx", FldPort, TabTargets, GrpInflux),
+	T("user_influx", FldUser, TabTargets, GrpInflux),
+	T("pwd_influx", FldPassword, TabTargets, GrpInflux),
+	T("measurement_name_influx", FldMeasurement, TabTargets, GrpInflux),
+	T("ssl_influx", FldSslInflux, TabTargets, GrpInflux),
+	T("send2custom", FldSend2Custom, TabTargets, GrpCustomApi),
+	T("host_custom", FldHost, TabTargets, GrpCustomApi),
+	T("url_custom", FldPath, TabTargets, GrpCustomApi),
+	T("port_custom", FldPort, TabTargets, GrpCustomApi),
+	T("user_custom", FldUser, TabTargets, GrpCustomApi),
+	T("pwd_custom", FldPassword, TabTargets, GrpCustomApi),
+	T("ssl_custom", FldSslCustom, TabTargets, GrpCustomApi),
+	T("send2sensemap", FldSend2Sensemap, TabTargets, GrpOtherServices),
+	T("senseboxid", FldSenseboxId, TabTargets, GrpOtherServices),
+	T("send2fsapp", FldSend2Fsapp, TabTargets, GrpOtherServices),
+	T("send2aircms", FldSend2Aircms, TabTargets, GrpOtherServices),
+	T("send2csv", FldSend2Csv, TabTargets, GrpOtherServices),
 
 	// --- Settings ---
-	{ "current_lang", "Sprache", "Einstellungen", "Allgemein" },
-	{ "sending_intervall_ms", "Sendeintervall (ms)", "Einstellungen", "Allgemein" },
-	{ "debug", "Debug-Level (0-5)", "Einstellungen", "Allgemein" },
-	{ "powersave", "Stromsparmodus (WLAN)", "Einstellungen", "Allgemein" },
-	{ "www_username", "Web-Benutzer", "Einstellungen", "Zugang" },
-	{ "www_password", "Web-Passwort", "Einstellungen", "Zugang" },
-	{ "www_basicauth_enabled", "Zugriff mit Passwort schützen", "Einstellungen", "Zugang" },
-	{ "has_display", "OLED SSD1306", "Einstellungen", "Anzeige" },
-	{ "has_sh1106", "OLED SH1106", "Einstellungen", "Anzeige" },
-	{ "has_flipped_display", "Anzeige gespiegelt", "Einstellungen", "Anzeige" },
-	{ "has_lcd1602", "LCD 16x2 (0x3F)", "Einstellungen", "Anzeige" },
-	{ "has_lcd1602_27", "LCD 16x2 (0x27)", "Einstellungen", "Anzeige" },
-	{ "has_lcd2004", "LCD 20x4 (0x3F)", "Einstellungen", "Anzeige" },
-	{ "has_lcd2004_27", "LCD 20x4 (0x27)", "Einstellungen", "Anzeige" },
-	{ "display_wifi_info", "WLAN-Infos anzeigen", "Einstellungen", "Anzeige" },
-	{ "display_device_info", "Geräte-Infos anzeigen", "Einstellungen", "Anzeige" },
-	{ "fs_ssid", "AP-Name (Konfig-Modus)", "Einstellungen", "Konfig-Modus" },
-	{ "fs_pwd", "AP-Passwort", "Einstellungen", "Konfig-Modus" },
-	{ "time_for_wifi_config", "Zeit für Konfig-Modus (ms)", "Einstellungen", "Konfig-Modus" },
+	T("current_lang", FldLanguage, TabSettings, GrpGeneral),
+	T("sending_intervall_ms", FldSendingInterval, TabSettings, GrpGeneral),
+	T("debug", FldDebugLevel, TabSettings, GrpGeneral),
+	T("powersave", FldPowersave, TabSettings, GrpGeneral),
+	T("www_username", FldWwwUser, TabSettings, GrpAccess),
+	T("www_password", FldWwwPassword, TabSettings, GrpAccess),
+	T("www_basicauth_enabled", FldBasicAuth, TabSettings, GrpAccess),
+	L("has_display", "OLED SSD1306", TabSettings, GrpDisplay),
+	L("has_sh1106", "OLED SH1106", TabSettings, GrpDisplay),
+	T("has_flipped_display", FldFlippedDisplay, TabSettings, GrpDisplay),
+	L("has_lcd1602", "LCD 16x2 (0x3F)", TabSettings, GrpDisplay),
+	L("has_lcd1602_27", "LCD 16x2 (0x27)", TabSettings, GrpDisplay),
+	L("has_lcd2004", "LCD 20x4 (0x3F)", TabSettings, GrpDisplay),
+	L("has_lcd2004_27", "LCD 20x4 (0x27)", TabSettings, GrpDisplay),
+	T("display_wifi_info", FldDisplayWifiInfo, TabSettings, GrpDisplay),
+	T("display_device_info", FldDisplayDeviceInfo, TabSettings, GrpDisplay),
+	T("fs_ssid", FldApSsid, TabSettings, GrpApMode),
+	T("fs_pwd", FldApPassword, TabSettings, GrpApMode),
+	T("time_for_wifi_config", FldTimeForWifiConfig, TabSettings, GrpApMode),
 };
 
-int count() { return (int)(sizeof(L) / sizeof(L[0])); }
-const Entry &at(int i) { return L[i]; }
+#undef L
+#undef T
+
+int count() { return (int)(sizeof(LIST) / sizeof(LIST[0])); }
+const Entry &at(int i) { return LIST[i]; }
 
 int tabCount() { return (int)(sizeof(TABS) / sizeof(TABS[0])); }
-const char *tabName(int i) { return TABS[i]; }
+Str tabId(int i) { return TABS[i]; }
+
+void appendLabel(String &out, const Entry &e)
+{
+	if (e.literal) out += e.literal;
+	else           out += TR(e.label);
+}
 
 } // namespace FormLabels

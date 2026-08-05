@@ -15,6 +15,7 @@ The original firmware is a single ~6300-line `.ino` file. This rewrite splits it
 - **Separate, shorter MQTT interval** for live values (e.g. every 30 s), independent of the cloud send cycle (145 s)
 - **Per-backend send status** via MQTT (`status/sensorcommunity`, `status/madavi`, `status/mqtt` = `ok`/`error`)
 - **All sensors of the original**: SDS011, PMSx003, HPM, NPM, PPD42, IPS, SPS30, DHT22, HTU21D, BMP180, BMP280/BME280, SHT3x, SCD30, DS18B20, DNMS (noise), GPS
+- **Multi-language web UI**, switchable at runtime (German/English built in, more via `Features.h`)
 - **All data targets**: sensor.community, Madavi.de, OpenSenseMap, Feinstaub-App, aircms, InfluxDB, custom HTTP JSON, CSV over USB, MQTT
 - **Derived values**: dew point + sea-level pressure (to MQTT/Madavi/InfluxDB; sensor.community computes sea-level pressure itself)
 - **Web configuration portal** (tabs, WiFi scan, DHCP/static), **captive portal** in AP mode for initial setup
@@ -71,6 +72,21 @@ Afterwards the full configuration is available at `http://<device-ip>/config`. C
 Key MQTT settings (tab *Data targets → MQTT*): broker/port, username/password, optional TLS, topic prefix, Home Assistant discovery, MQTT interval.
 
 > Only compiled-in features appear in the web UI. If you disable a sensor or sender via `Features.h`/`build_flags`, it also disappears from the configuration.
+
+## Language
+
+The web UI ships in **German and English**; the language is chosen at runtime under *Settings → General → Language* and takes effect immediately (no reflash). Unlike the original firmware – which builds one binary per language via `-DINTL_DE` – the compiled-in languages are all available in the same image.
+
+Which languages end up in the binary is a compile-time decision, because each one costs roughly **3–4 kB of flash**:
+
+```bash
+pio run -e esp32dev                      # German + English (default)
+pio run -e esp32dev -a "-D FEATURE_LANG_EN=0"   # German only
+```
+
+The **first** language enabled in `Features.h` is the fallback when the stored code (`current_lang`) is not compiled in.
+
+**Adding a language:** copy [`src/i18n/strings_template.h`](src/i18n/strings_template.h) to `strings_xx.h`, translate the entries, then add a `FEATURE_LANG_XX` switch in `Features.h` and one block in `Lang.cpp` (the file header describes all three steps). All string IDs come from a single master list in [`Lang.h`](src/i18n/Lang.h), so a missing translation fails the build instead of silently showing a blank label.
 
 ## MQTT Topics (example)
 
@@ -135,6 +151,7 @@ src/
   boards/             pin files per board
   sensors/            ISensor interface + one driver per sensor
   senders/            IDataSender interface + one backend each
+  i18n/               UI languages (master ID list + one file per language)
   net/                WiFi manager, NTP
   web/                configuration portal, web OTA
   display/            OLED/LCD

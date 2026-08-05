@@ -4,6 +4,7 @@
 #include "../Debug.h"
 
 #include "FormLabels.h"
+#include "../i18n/Lang.h"
 #include "../net/WifiManager.h"
 #include "../sensors/SensorManager.h"
 #include "../util/Correction.h"
@@ -67,17 +68,24 @@ bool WebPortal::requireAuth()
 // Shared WLAN scan block (network list with signal bars, fills #wlanssid).
 static void appendScanBlock(String &p)
 {
-	p += F(
-		"<p><b>WLAN-Netze</b> &middot; <a href='#' onclick='sc();return false'>aktualisieren</a></p>"
+	p += F("<p><b>");
+	p += TR(Str::WifiNetworks);
+	p += F("</b> &middot; <a href='#' onclick='sc();return false'>");
+	p += TR(Str::Refresh);
+	p += F("</a></p>"
 		"<ul id='wl'></ul>"
 		"<script>"
 		"function bars(r){var lvl=r>=-55?4:r>=-65?3:r>=-75?2:r>=-85?1:0;var h=[5,8,11,14];"
 		"var s='<span style=\"display:inline-block;width:20px;height:15px;margin-right:6px\">';"
 		"for(var i=0;i<4;i++){s+='<span style=\"display:inline-block;width:3px;margin-right:1px;vertical-align:bottom;'"
 		"+'height:'+h[i]+'px;background:'+(i<lvl?'#2a7':'#ccc')+'\"></span>';}return s+'</span>';}"
-		"function sc(){var u=document.getElementById('wl');u.innerHTML='Lade...';"
+		"function sc(){var u=document.getElementById('wl');u.innerHTML='");
+	p += TR(Str::Loading);
+	p += F("';"
 		"fetch('/wifi').then(r=>r.json()).then(function(l){u.innerHTML='';"
-		"if(!l.length){u.innerHTML='<li>Noch keine Netze - bitte kurz warten...</li>';"
+		"if(!l.length){u.innerHTML='<li>");
+	p += TR(Str::NoNetworksYet);
+	p += F("</li>';"
 		"setTimeout(sc,3000);return;}"
 		"l.sort(function(a,b){return b.rssi-a.rssi});l.forEach(function(n){"
 		"var li=document.createElement('li');li.innerHTML=bars(n.rssi);"
@@ -91,7 +99,11 @@ String WebPortal::pageStart(const String &subtitle)
 {
 	String p;
 	p.reserve(1400);
-	p += F("<!doctype html><html><head><meta charset='utf-8'>"
+	String lang(I18n::code());
+	lang.toLowerCase();
+	p += F("<!doctype html><html lang='");
+	p += lang;
+	p += F("'><head><meta charset='utf-8'>"
 		   "<meta name='viewport' content='width=device-width,initial-scale=1'>"
 		   "<title>airRohr</title>"
 		   "<link rel='icon' type='image/svg+xml' href='/favicon.svg'>"
@@ -125,17 +137,24 @@ String WebPortal::pageStart(const String &subtitle)
 		   "footer{color:#888;padding:1em;text-align:center;font-size:.8em}</style></head><body>");
 	p += F("<header><svg width='42' height='42' viewBox='0 0 24 24' fill='#fff'>"
 		   "<path d='M19 18H6a4 4 0 010-8 5 5 0 019.6-1.5A3.5 3.5 0 0119 18z'/></svg>"
-		   "<div><h1>airRohr Feinstaubsensor</h1><div class='meta'>ID: ");
+		   "<div><h1>");
+	p += TR(Str::AppTitle);
+	p += F("</h1><div class='meta'>ID: ");
 	p += boardNodeId();
-	p += F("<br>Firmware: " AIRROHR_VERSION);
+	p += F("<br>");
+	p += TR(Str::FirmwareLabel);
+	p += F(": " AIRROHR_VERSION);
 	if (subtitle.length()) { p += F(" &middot; "); p += subtitle; }
 	p += F("</div></div></header><main>");
 	return p;
 }
 
-const __FlashStringHelper *WebPortal::pageEnd()
+String WebPortal::pageEnd()
 {
-	return F("</main><footer>airRohr &ndash; modulare Firmware</footer></body></html>");
+	String p = F("</main><footer>");
+	p += TR(Str::FooterText);
+	p += F("</footer></body></html>");
+	return p;
 }
 
 void WebPortal::handleRoot()
@@ -145,25 +164,31 @@ void WebPortal::handleRoot()
 	// --- AP/configuration mode: only set up WLAN (SSID/PW + DHCP/static) ---
 	// Detect the mode via the WifiManager (not WiFi.getMode(), which the scan changes).
 	if (_wifi && _wifi->isAccessPoint()) {
-		String p = pageStart(F("WLAN einrichten"));
+		String p = pageStart(String(TR(Str::WifiSetupTitle)));
 		p.reserve(p.length() + 4000);
-		p += F("<p>Konfigurationsmodus. Bitte zuerst das WLAN einrichten. Sensoren, MQTT "
-			   "und Datenziele lassen sich anschließend im Heimnetz einstellen.</p>"
-			   "<form action='/save' method='POST'>");
+		p += F("<p>");
+		p += TR(Str::ApIntro);
+		p += F("</p><form action='/save' method='POST'>");
 		appendScanBlock(p);
-		p += F("<label>WLAN-Name (SSID) <input type='text' id='wlanssid' name='wlanssid' value='");
+		p += F("<label>");
+		p += TR(Str::FldSsid);
+		p += F(" <input type='text' id='wlanssid' name='wlanssid' value='");
 		p += cfg.wlanssid;
-		p += F("'></label><label>WLAN-Passwort <input type='password' name='wlanpwd' value=''></label>");
+		p += F("'></label><label>");
+		p += TR(Str::FldWifiPassword);
+		p += F(" <input type='password' name='wlanpwd' value=''></label>");
 
 		// DHCP / static IP
-		p += F("<label>Statische IP statt DHCP <input type='checkbox' id='us' onchange='tgl()'></label>"
+		p += F("<label>");
+		p += TR(Str::StaticIpToggle);
+		p += F(" <input type='checkbox' id='us' onchange='tgl()'></label>"
 			   "<div id='sb' style='display:none'>");
 		const char *sf[] = { "static_ip", "static_subnet", "static_gateway", "static_dns" };
-		const char *sl[] = { "IP-Adresse", "Subnetzmaske", "Gateway", "DNS-Server" };
+		const Str   sl[] = { Str::LabelIp, Str::LabelSubnet, Str::LabelGateway, Str::LabelDns };
 		const char *sv[] = { cfg.static_ip, cfg.static_subnet, cfg.static_gateway, cfg.static_dns };
 		for (int i = 0; i < 4; ++i) {
 			p += F("<label>");
-			p += sl[i];
+			p += TR(sl[i]);
 			p += F(" <input type='text' id='");
 			p += sf[i];
 			p += F("' name='");
@@ -178,7 +203,9 @@ void WebPortal::handleRoot()
 			   "function(k){document.getElementById(k).value=''})}}"
 			   "if(document.getElementById('static_ip').value){document.getElementById('us').checked=true;tgl()}</script>");
 
-		p += F("<button type='submit'>Speichern &amp; Neustart</button></form>");
+		p += F("<button type='submit'>");
+		p += TR(Str::BtnSaveRestart);
+		p += F("</button></form>");
 		p += pageEnd();
 		_server.send(200, F("text/html; charset=utf-8"), p);
 		return;
@@ -186,22 +213,36 @@ void WebPortal::handleRoot()
 
 	// --- Normal operation: overview menu ---
 	String p = pageStart(String());
-	p += F("<h2>Übersicht &raquo;</h2>"
-		   "<a class='btn' href='/values'>Aktuelle Werte</a>"
-		   "<a class='btn' href='/status'>Gerätestatus</a>"
-		   "<a class='btn' href='/config'>Konfiguration</a>"
-		   "<a class='btn' href='/update'>Firmware-Update</a>"
-		   "<a class='btn' href='/metrics'>Metrics</a>"
-		   "<a class='btn' href='/removeConfig' onclick=\"return confirm('Konfiguration wirklich löschen?')\">Konfiguration löschen</a>"
-		   "<a class='btn' href='/reset' onclick=\"return confirm('Sensor neu starten?')\">Sensor neu starten</a>");
+	p += F("<h2>");
+	p += TR(Str::MenuHeading);
+	p += F(" &raquo;</h2><a class='btn' href='/values'>");
+	p += TR(Str::MenuValues);
+	p += F("</a><a class='btn' href='/status'>");
+	p += TR(Str::MenuStatus);
+	p += F("</a><a class='btn' href='/config'>");
+	p += TR(Str::MenuConfig);
+	p += F("</a><a class='btn' href='/update'>");
+	p += TR(Str::MenuUpdate);
+	p += F("</a><a class='btn' href='/metrics'>");
+	p += TR(Str::MenuMetrics);
+	p += F("</a><a class='btn' href='/removeConfig' onclick=\"return confirm('");
+	p += TR(Str::ConfirmRemoveConfig);
+	p += F("')\">");
+	p += TR(Str::MenuRemoveConfig);
+	p += F("</a><a class='btn' href='/reset' onclick=\"return confirm('");
+	p += TR(Str::ConfirmRestart);
+	p += F("')\">");
+	p += TR(Str::MenuRestart);
+	p += F("</a>");
 	p += pageEnd();
 	_server.send(200, F("text/html; charset=utf-8"), p);
 }
 
 // Append a single form field (checkbox on the left / text row).
-static void appendField(String &p, const char *key, const char *label,
+static void appendField(String &p, const FormLabels::Entry &e,
 						Config::Kind kind, const String &val)
 {
+	const char *key = e.key;
 	const bool isPwd = strstr(key, "pwd") || strstr(key, "password");
 	if (kind == Config::Kind::Bool) {
 		p += F("<label class='chk'><input type='checkbox' name='");
@@ -209,27 +250,46 @@ static void appendField(String &p, const char *key, const char *label,
 		p += F("' value='1'");
 		if (val == "1") p += F(" checked");
 		p += F("> ");
-		p += label;
+		FormLabels::appendLabel(p, e);
 		p += F("</label>");
-	} else {
-		p += F("<div class='row'><span>");
-		p += label;
-		p += F("</span><input id='");
-		p += key;
-		p += F("' type='");
-		p += (kind == Config::Kind::UInt) ? F("number") : (isPwd ? F("password") : F("text"));
-		p += F("' name='");
-		p += key;
-		p += F("' value='");
-		if (!isPwd) p += val;
-		p += F("'></div>");
+		return;
 	}
+
+	p += F("<div class='row'><span>");
+	FormLabels::appendLabel(p, e);
+	p += F("</span>");
+
+	// Language: dropdown of the compiled-in languages instead of a free-text field.
+	if (strcmp(key, "current_lang") == 0) {
+		p += F("<select id='current_lang' name='current_lang'>");
+		for (int i = 0; i < I18n::count(); ++i) {
+			p += F("<option value='");
+			p += I18n::codeAt(i);
+			p += F("'");
+			if (val.equalsIgnoreCase(I18n::codeAt(i))) p += F(" selected");
+			p += F(">");
+			p += I18n::nameAt(i);
+			p += F("</option>");
+		}
+		p += F("</select></div>");
+		return;
+	}
+
+	p += F("<input id='");
+	p += key;
+	p += F("' type='");
+	p += (kind == Config::Kind::UInt) ? F("number") : (isPwd ? F("password") : F("text"));
+	p += F("' name='");
+	p += key;
+	p += F("' value='");
+	if (!isPwd) p += val;
+	p += F("'></div>");
 }
 
 void WebPortal::handleConfigForm()
 {
 	if (!requireAuth()) return;
-	String p = pageStart(F("Konfiguration"));
+	String p = pageStart(String(TR(Str::MenuConfig)));
 	p.reserve(p.length() + 16000);
 
 	// Tab bar
@@ -239,7 +299,7 @@ void WebPortal::handleConfigForm()
 		p += F("<button type='button' class='tab' onclick='T(");
 		p += String(t);
 		p += F(")'>");
-		p += FormLabels::tabName(t);
+		p += TR(FormLabels::tabId(t));
 		p += F("</button>");
 	}
 	p += F("</div><form action='/save' method='POST'>");
@@ -247,34 +307,35 @@ void WebPortal::handleConfigForm()
 	// Panels per tab
 	const int nf = FormLabels::count();
 	for (int t = 0; t < tabs; ++t) {
-		const char *tabname = FormLabels::tabName(t);
+		const Str tabid = FormLabels::tabId(t);
 		p += F("<div class='panel'>");
-		String curGroup;
+		Str curGroup = Str::COUNT;
 		for (int i = 0; i < nf; ++i) {
 			const FormLabels::Entry &e = FormLabels::at(i);
-			if (strcmp(e.tab, tabname) != 0) continue;
-			if (e.group[0] && curGroup != e.group) {
+			if (e.tab != tabid) continue;
+			if (e.group != Str::COUNT && curGroup != e.group) {
 				curGroup = e.group;
 				p += F("<div class='grp'>");
-				p += e.group;
+				p += TR(e.group);
 				p += F("</div>");
 			}
 			Config::Kind kind;
 			String val;
 			if (Config::field(e.key, kind, val)) {
-				appendField(p, e.key, e.label, kind, val);
+				appendField(p, e, kind, val);
 			}
 		}
 		// In the WLAN tab: DHCP/static-IP toggle (fields hidden by default).
-		if (!strcmp(tabname, "WLAN")) {
-			p += F("<label class='chk'><input type='checkbox' id='us' onchange='tgl()'> "
-				   "Statische IP statt DHCP</label><div id='sb' style='display:none'>");
+		if (tabid == Str::TabWifi) {
+			p += F("<label class='chk'><input type='checkbox' id='us' onchange='tgl()'> ");
+			p += TR(Str::StaticIpToggle);
+			p += F("</label><div id='sb' style='display:none'>");
 			const char *sf[] = { "static_ip", "static_subnet", "static_gateway", "static_dns" };
-			const char *sl[] = { "IP-Adresse", "Subnetzmaske", "Gateway", "DNS-Server" };
+			const Str   sl[] = { Str::LabelIp, Str::LabelSubnet, Str::LabelGateway, Str::LabelDns };
 			const char *sv[] = { cfg.static_ip, cfg.static_subnet, cfg.static_gateway, cfg.static_dns };
 			for (int k = 0; k < 4; ++k) {
 				p += F("<div class='row'><span>");
-				p += sl[k];
+				p += TR(sl[k]);
 				p += F("</span><input type='text' id='");
 				p += sf[k];
 				p += F("' name='");
@@ -288,8 +349,11 @@ void WebPortal::handleConfigForm()
 		p += F("</div>"); // panel
 	}
 
-	p += F("<button type='submit'>Speichern &amp; Neustart</button></form>"
-		   "<p><a href='/'>&laquo; Übersicht</a></p>"
+	p += F("<button type='submit'>");
+	p += TR(Str::BtnSaveRestart);
+	p += F("</button></form><p><a href='/'>&laquo; ");
+	p += TR(Str::BackToOverview);
+	p += F("</a></p>"
 		   "<script>"
 		   "function T(i){var t=document.querySelectorAll('.tab'),pa=document.querySelectorAll('.panel');"
 		   "for(var j=0;j<pa.length;j++){pa[j].style.display=j==i?'block':'none';t[j].className=j==i?'tab active':'tab'}}"
@@ -322,14 +386,19 @@ void WebPortal::handleSave()
 		}
 	}
 	Config::save();
+	// Apply a changed language immediately - the confirmation page below should
+	// already appear in the newly chosen one.
+	I18n::setLang(cfg.current_lang);
 
-	String p = pageStart(F("Gespeichert"));
-	p += F("<p>Gespeichert. Das Gerät startet neu &ndash; du wirst automatisch "
-		   "zurückgeleitet, sobald es wieder erreichbar ist.</p>"
-		   "<p id='st'>Neustart läuft…</p>"
-		   "<script>function chk(){fetch('/',{cache:'no-store'}).then(function(){"
-		   "location.href='/'}).catch(function(){document.getElementById('st').textContent="
-		   "'Warte auf Gerät…';setTimeout(chk,2000)})}setTimeout(chk,6000);</script>");
+	String p = pageStart(String(TR(Str::SavedTitle)));
+	p += F("<p>");
+	p += TR(Str::SavedText);
+	p += F("</p><p id='st'>");
+	p += TR(Str::RestartRunning);
+	p += F("</p><script>function chk(){fetch('/',{cache:'no-store'}).then(function(){"
+		   "location.href='/'}).catch(function(){document.getElementById('st').textContent='");
+	p += TR(Str::WaitingForDevice);
+	p += F("';setTimeout(chk,2000)})}setTimeout(chk,6000);</script>");
 	p += pageEnd();
 	_server.send(200, F("text/html; charset=utf-8"), p);
 	delay(500);
@@ -357,26 +426,26 @@ static void valueInfo(const String &vt, String &label, String &unit, float &scal
 	label = ""; unit = ""; scale = 1.0f;
 
 	// Device telemetry
-	if (vt == "device_ssid")     { label = "WLAN"; return; }
-	if (vt == "device_ip")       { label = "IP-Adresse"; return; }
-	if (vt == "device_rssi")     { label = "Signal"; unit = "dBm"; return; }
-	if (vt == "device_uptime")   { label = "Uptime"; unit = "s"; return; }
-	if (vt == "device_heap")     { label = "Freier RAM"; unit = "Bytes"; return; }
-	if (vt == "device_firmware") { label = "Firmware"; return; }
+	if (vt == "device_ssid")     { label = TR(Str::ValDeviceSsid); return; }
+	if (vt == "device_ip")       { label = TR(Str::ValDeviceIp); return; }
+	if (vt == "device_rssi")     { label = TR(Str::ValDeviceRssi); unit = "dBm"; return; }
+	if (vt == "device_uptime")   { label = TR(Str::ValDeviceUptime); unit = "s"; return; }
+	if (vt == "device_heap")     { label = TR(Str::ValDeviceHeap); unit = "Bytes"; return; }
+	if (vt == "device_firmware") { label = TR(Str::ValDeviceFirmware); return; }
 
 	// Derived values (before the generic "pressure" check!)
-	if (vt.indexOf("sealevel") >= 0)  { label = "Luftdruck auf Meereshöhe"; unit = "hPa"; scale = 0.01f; return; }
-	if (vt.indexOf("dew_point") >= 0) { label = "Taupunkt"; unit = "°C"; return; }
+	if (vt.indexOf("sealevel") >= 0)  { label = TR(Str::ValPressureSealevel); unit = "hPa"; scale = 0.01f; return; }
+	if (vt.indexOf("dew_point") >= 0) { label = TR(Str::ValDewPoint); unit = "°C"; return; }
 
 	// Climate
-	if (vt.indexOf("temperature") >= 0) { label = "Temperatur"; unit = "°C"; return; }
-	if (vt.indexOf("humidity") >= 0)    { label = "rel. Luftfeuchte"; unit = "%"; return; }
-	if (vt.indexOf("pressure") >= 0)    { label = "Luftdruck"; unit = "hPa"; scale = 0.01f; return; }
-	if (vt.indexOf("co2") >= 0 || vt.indexOf("CO2") >= 0) { label = "CO2"; unit = "ppm"; return; }
+	if (vt.indexOf("temperature") >= 0) { label = TR(Str::ValTemperature); unit = "°C"; return; }
+	if (vt.indexOf("humidity") >= 0)    { label = TR(Str::ValHumidity); unit = "%"; return; }
+	if (vt.indexOf("pressure") >= 0)    { label = TR(Str::ValPressure); unit = "hPa"; scale = 0.01f; return; }
+	if (vt.indexOf("co2") >= 0 || vt.indexOf("CO2") >= 0) { label = TR(Str::ValCo2); unit = "ppm"; return; }
 	if (vt.indexOf("noise") >= 0) {
-		if (vt.endsWith("min")) label = "Lärm min";
-		else if (vt.endsWith("max")) label = "Lärm max";
-		else label = "Lärm LAeq";
+		if (vt.endsWith("min")) label = TR(Str::ValNoiseMin);
+		else if (vt.endsWith("max")) label = TR(Str::ValNoiseMax);
+		else label = TR(Str::ValNoiseLaeq);
 		unit = "dB(A)"; return;
 	}
 
@@ -410,10 +479,10 @@ static void valueInfo(const String &vt, String &label, String &unit, float &scal
 	if (vt.startsWith("ratio")) { label = "Ratio"; unit = "%"; return; }
 
 	// GPS
-	if (vt == "GPS_lat")       { label = "Breitengrad"; return; }
-	if (vt == "GPS_lon")       { label = "Längengrad"; return; }
-	if (vt == "GPS_height")    { label = "Höhe"; unit = "m"; return; }
-	if (vt == "GPS_timestamp") { label = "Zeitstempel"; return; }
+	if (vt == "GPS_lat")       { label = TR(Str::ValLatitude); return; }
+	if (vt == "GPS_lon")       { label = TR(Str::ValLongitude); return; }
+	if (vt == "GPS_height")    { label = TR(Str::ValAltitude); unit = "m"; return; }
+	if (vt == "GPS_timestamp") { label = TR(Str::ValTimestamp); return; }
 }
 
 void WebPortal::handleValues()
@@ -428,16 +497,25 @@ void WebPortal::handleValues()
 		{ &cfg.gps_read, "GPS" },
 	};
 
-	String out = pageStart(F("Aktuelle Werte"));
+	String out = pageStart(String(TR(Str::ValuesTitle)));
 	if (_lastMillis) {
 		out += F("<p>");
 		out += String((millis() - _lastMillis) / 1000);
-		out += F(" Sekunden seit der letzten Messung.</p>");
+		out += F(" ");
+		out += TR(Str::SecondsSinceMeasurement);
+		out += F("</p>");
 	} else {
-		out += F("<p style='color:#888'>Noch keine Messung &ndash; erste Werte nach dem "
-				 "Sendeintervall.</p>");
+		out += F("<p style='color:#888'>");
+		out += TR(Str::NoMeasurementYet);
+		out += F("</p>");
 	}
-	out += F("<table><tr><th>Sensor</th><th>Parameter</th><th style='text-align:right'>Wert</th></tr>");
+	out += F("<table><tr><th>");
+	out += TR(Str::ThSensor);
+	out += F("</th><th>");
+	out += TR(Str::ThParameter);
+	out += F("</th><th style='text-align:right'>");
+	out += TR(Str::ThValue);
+	out += F("</th></tr>");
 
 	auto renderRow = [&](const char *sensor, const String &vt, const String &rawVal) {
 		String label, unit; float scale;
@@ -483,7 +561,9 @@ void WebPortal::handleValues()
 			// I2C sensor already not found on the bus at begin().
 			out += F("<tr><td>");
 			out += sc.name;
-			out += F("</td><td>&mdash;</td><td style='text-align:right;color:#b00'>nicht gefunden</td></tr>");
+			out += F("</td><td>&mdash;</td><td style='text-align:right;color:#b00'>");
+			out += TR(Str::NotFound);
+			out += F("</td></tr>");
 		} else {
 			renderRow(sc.name, "", ""); // configured, no data yet -> -.-
 		}
@@ -492,57 +572,91 @@ void WebPortal::handleValues()
 	// Device telemetry separately.
 	for (const SensorReadings &gr : _lastGroups) {
 		if (strcmp(gr.sensor, "device") != 0) continue;
-		for (const Reading &r : gr.readings) renderRow("Gerät", r.value_type, r.value);
+		const String devLabel(TR(Str::DeviceRowLabel));
+		for (const Reading &r : gr.readings) renderRow(devLabel.c_str(), r.value_type, r.value);
 	}
 
-	out += F("</table><p><a href='/'>&laquo; Übersicht</a></p>");
+	out += F("</table><p><a href='/'>&laquo; ");
+	out += TR(Str::BackToOverview);
+	out += F("</a></p>");
 	out += pageEnd();
 	_server.send(200, F("text/html; charset=utf-8"), out);
 }
 
 void WebPortal::handleStatus()
 {
-	String p = pageStart(F("Gerätestatus"));
-	p += F("<ul><li>Firmware: " AIRROHR_VERSION "</li><li>Node: ");
+	String p = pageStart(String(TR(Str::StatusTitle)));
+	p += F("<ul><li>");
+	p += TR(Str::FirmwareLabel);
+	p += F(": " AIRROHR_VERSION "</li><li>");
+	p += TR(Str::StNode);
+	p += F(": ");
 	p += boardNodeId();
 #if defined(ESP32)
-	p += F("</li><li>Board: ");
+	p += F("</li><li>");
+	p += TR(Str::StBoard);
+	p += F(": ");
 	p += ARDUINO_BOARD;
-	p += F("</li><li>Chip: ");
+	p += F("</li><li>");
+	p += TR(Str::StChip);
+	p += F(": ");
 	p += ESP.getChipModel();
 	p += F(" Rev ");
 	p += String(ESP.getChipRevision());
 	p += F(", ");
 	p += String(ESP.getChipCores());
-	p += F(" Cores @ ");
+	p += F(" ");
+	p += TR(Str::StCores);
+	p += F(" @ ");
 	p += String(ESP.getCpuFreqMHz());
-	p += F(" MHz</li><li>Flash: ");
+	p += F(" MHz</li><li>");
+	p += TR(Str::StFlash);
+	p += F(": ");
 	p += String(ESP.getFlashChipSize() / (1024 * 1024));
-	p += F(" MB</li><li>SDK: ");
+	p += F(" MB</li><li>");
+	p += TR(Str::StSdk);
+	p += F(": ");
 	p += ESP.getSdkVersion();
 #elif defined(ESP8266)
-	p += F("</li><li>Board: ESP8266</li><li>Flash: ");
+	p += F("</li><li>");
+	p += TR(Str::StBoard);
+	p += F(": ESP8266</li><li>");
+	p += TR(Str::StFlash);
+	p += F(": ");
 	p += String(ESP.getFlashChipRealSize() / (1024 * 1024));
-	p += F(" MB</li><li>SDK: ");
+	p += F(" MB</li><li>");
+	p += TR(Str::StSdk);
+	p += F(": ");
 	p += ESP.getSdkVersion();
 #endif
-	p += F("</li><li>Uptime: ");
+	p += F("</li><li>");
+	p += TR(Str::StUptime);
+	p += F(": ");
 	p += String(millis() / 1000);
-	p += F(" s</li><li>Freier Heap: ");
+	p += F(" s</li><li>");
+	p += TR(Str::StFreeHeap);
+	p += F(": ");
 	p += String(ESP.getFreeHeap());
-	p += F(" Bytes</li><li>WLAN: ");
+	p += F(" Bytes</li><li>");
+	p += TR(Str::StWifi);
+	p += F(": ");
 	if (WiFi.getMode() == WIFI_AP) {
-		p += F("AP-Modus, IP ");
+		p += TR(Str::StApMode);
+		p += F(" ");
 		p += WiFi.softAPIP().toString();
 	} else {
 		p += WiFi.SSID();
-		p += F(", IP ");
+		p += F(", ");
+		p += TR(Str::StIp);
+		p += F(" ");
 		p += WiFi.localIP().toString();
 		p += F(", RSSI ");
 		p += String(WiFi.RSSI());
 		p += F(" dBm");
 	}
-	p += F("</li></ul><p><a href='/'>&laquo; Übersicht</a></p>");
+	p += F("</li></ul><p><a href='/'>&laquo; ");
+	p += TR(Str::BackToOverview);
+	p += F("</a></p>");
 	p += pageEnd();
 	_server.send(200, F("text/html; charset=utf-8"), p);
 }
@@ -582,7 +696,10 @@ void WebPortal::handleWifiScan()
 void WebPortal::handleReset()
 {
 	if (!requireAuth()) return;
-	_server.send(200, F("text/html"), F("<html><body>Neustart...</body></html>"));
+	String p = F("<html><body>");
+	p += TR(Str::RestartingPlain);
+	p += F("</body></html>");
+	_server.send(200, F("text/html; charset=utf-8"), p);
 	delay(300);
 	ESP.restart();
 }
@@ -591,7 +708,10 @@ void WebPortal::handleRemoveConfig()
 {
 	if (!requireAuth()) return;
 	LittleFS.remove("/config.json");
-	_server.send(200, F("text/html"), F("<html><body>Config gelöscht. Neustart...</body></html>"));
+	String p = F("<html><body>");
+	p += TR(Str::ConfigDeletedPlain);
+	p += F("</body></html>");
+	_server.send(200, F("text/html; charset=utf-8"), p);
 	delay(300);
 	ESP.restart();
 }
@@ -612,26 +732,39 @@ void WebPortal::handleDebug()
 void WebPortal::handleUpdatePage()
 {
 	if (!requireAuth()) return;
-	_server.send(200, F("text/html; charset=utf-8"),
-				 F("<!doctype html><html><head><meta charset='utf-8'>"
-				   "<meta name='viewport' content='width=device-width,initial-scale=1'>"
-				   "<title>Firmware-Update</title></head><body>"
-				   "<h1>Firmware-Update</h1>"
-				   "<p>.bin-Datei auswählen und hochladen. Das Gerät flasht in den "
-				   "zweiten App-Slot und startet neu.</p>"
-				   "<form method='POST' action='/update' enctype='multipart/form-data'>"
-				   "<input type='file' name='firmware' accept='.bin'> "
-				   "<button type='submit'>Hochladen &amp; flashen</button></form>"
-				   "<p><a href='/'>Zurück</a></p></body></html>"));
+	String p = F("<!doctype html><html><head><meta charset='utf-8'>"
+				 "<meta name='viewport' content='width=device-width,initial-scale=1'>"
+				 "<title>");
+	p += TR(Str::UpdateTitle);
+	p += F("</title></head><body><h1>");
+	p += TR(Str::UpdateTitle);
+	p += F("</h1><p>");
+	p += TR(Str::UpdateIntro);
+	p += F("</p><form method='POST' action='/update' enctype='multipart/form-data'>"
+		   "<input type='file' name='firmware' accept='.bin'> "
+		   "<button type='submit'>");
+	p += TR(Str::UpdateButton);
+	p += F("</button></form><p><a href='/'>");
+	p += TR(Str::BackPlain);
+	p += F("</a></p></body></html>");
+	_server.send(200, F("text/html; charset=utf-8"), p);
 }
 
 void WebPortal::handleUpdateDone()
 {
 	const bool ok = !Update.hasError();
-	_server.send(200, F("text/html; charset=utf-8"),
-				 ok ? F("<html><body><p>Update OK. Neustart...</p>"
-						"<script>setTimeout(function(){location.href='/'},8000)</script></body></html>")
-					: F("<html><body><p>Update FEHLGESCHLAGEN.</p><p><a href='/update'>Zurück</a></p></body></html>"));
+	String p = F("<html><body><p>");
+	if (ok) {
+		p += TR(Str::UpdateOk);
+		p += F("</p><script>setTimeout(function(){location.href='/'},8000)</script>");
+	} else {
+		p += TR(Str::UpdateFailed);
+		p += F("</p><p><a href='/update'>");
+		p += TR(Str::BackPlain);
+		p += F("</a></p>");
+	}
+	p += F("</body></html>");
+	_server.send(200, F("text/html; charset=utf-8"), p);
 	delay(500);
 	if (ok) {
 		ESP.restart();

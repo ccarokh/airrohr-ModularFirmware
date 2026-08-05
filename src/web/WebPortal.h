@@ -32,7 +32,7 @@ public:
 private:
 	bool requireAuth();        // Check basic auth (if enabled)
 	String pageStart(const String &subtitle); // Head + header (uniform layout)
-	static const __FlashStringHelper *pageEnd();
+	static String pageEnd();
 	void handleRoot();         // Overview (or WLAN setup in AP mode)
 	void handleConfigForm();   // /config: full configuration
 	void handleSave();
