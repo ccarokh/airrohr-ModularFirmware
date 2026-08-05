@@ -63,6 +63,18 @@ struct Settings {
 	bool  ds18b20_read = false;
 	bool  dnms_read  = false;
 	bool  gps_read   = false;
+	bool  rain_read  = false;   // LM393 rain sensor (analog + digital)
+	bool  wind_read  = false;   // analog anemometer
+
+	// Calibration of the analog weather sensors (strings like temp_correction).
+	// Rain: ADC raw values for "bone dry" and "soaking wet" -> 0-100 %.
+	char  rain_dry_adc[8]  = "3000";
+	char  rain_wet_adc[8]  = "1200";
+	// Wind: U_sensor = U_ADC * divider; speed = (U_sensor - offset) * factor.
+	// Defaults follow the carrier board (10k/20k divider -> 1.5).
+	char  wind_divider[8]  = "1.5";
+	char  wind_factor[8]   = "14.0";
+	char  wind_offset[8]   = "0.0";
 
 	// --- Sender: sensor.community / madavi ---
 	bool  send2dusti  = true;

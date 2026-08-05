@@ -54,6 +54,16 @@
 #ifndef FEATURE_SENSOR_GPS
   #define FEATURE_SENSOR_GPS 1
 #endif
+// Weather sensors of the airRohr-ESP32 carrier board (analog, ADC1).
+// OFF by default, unlike every other sensor: they are not part of the
+// sensor.community reference hardware and occupy two analog pins that other
+// boards use differently. Whoever has the carrier board switches them on here.
+#ifndef FEATURE_SENSOR_RAIN
+  #define FEATURE_SENSOR_RAIN 0
+#endif
+#ifndef FEATURE_SENSOR_WIND
+  #define FEATURE_SENSOR_WIND 0
+#endif
 
 // ---- Sender ----------------------------------------------------------------
 #ifndef FEATURE_SENDER_SENSORCOMMUNITY

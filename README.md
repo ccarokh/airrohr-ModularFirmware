@@ -15,6 +15,7 @@ The original firmware is a single ~6300-line `.ino` file. This rewrite splits it
 - **Separate, shorter MQTT interval** for live values (e.g. every 30 s), independent of the cloud send cycle (145 s)
 - **Per-backend send status** via MQTT (`status/sensorcommunity`, `status/madavi`, `status/mqtt` = `ok`/`error`)
 - **All sensors of the original**: SDS011, PMSx003, HPM, NPM, PPD42, IPS, SPS30, DHT22, HTU21D, BMP180, BMP280/BME280, SHT3x, SCD30, DS18B20, DNMS (noise), GPS
+- **Plus two weather sensors** the original does not have: **rain** (LM393, analog + digital) and **wind speed** (analog anemometer, mean + gust)
 - **Multi-language web UI**, switchable at runtime (German/English built in, more via `Features.h`)
 - **All data targets**: sensor.community, Madavi.de, OpenSenseMap, Feinstaub-App, aircms, InfluxDB, custom HTTP JSON, CSV over USB, MQTT
 - **Derived values**: dew point + sea-level pressure (to MQTT/Madavi/InfluxDB; sensor.community computes sea-level pressure itself)
@@ -31,6 +32,8 @@ The original firmware is a single ~6300-line `.ino` file. This rewrite splits it
 | ESP8266 | NodeMCU v2 (`nodemcuv2`) | `espressif8266` |
 
 Pin assignments per board in [`src/boards/`](src/boards/) (`pins_esp32dev.h`, `pins_nodemcu.h`). Override via `-D BOARD_PINS="boards/pins_x.h"`.
+
+> ⚠️ **Changed on ESP32:** the PM serial port now sits on **GPIO27 (RX) / GPIO33 (TX)** – the same pins as the original firmware (`ext_def.h`, `#ifdef ESP32`) and as the airRohr-ESP32 carrier board. Earlier builds of this firmware used 16/17. If your wiring follows the old assignment, build with `-D PIN_PM_SERIAL_RX=16 -D PIN_PM_SERIAL_TX=17`.
 
 ## Prebuilt Firmware Images
 
@@ -88,6 +91,30 @@ The **first** language enabled in `Features.h` is the fallback when the stored c
 
 **Adding a language:** copy [`src/i18n/strings_template.h`](src/i18n/strings_template.h) to `strings_xx.h`, translate the entries, then add a `FEATURE_LANG_XX` switch in `Features.h` and one block in `Lang.cpp` (the file header describes all three steps). All string IDs come from a single master list in [`Lang.h`](src/i18n/Lang.h), so a missing translation fails the build instead of silently showing a blank label.
 
+## Weather Sensors (rain + wind)
+
+Two analog sensors that the original firmware does not support, designed for the airRohr-ESP32 carrier board (KiCad project kept next to this repository):
+
+| Sensor | Values (`value_type`) | Default pin (ESP32) |
+|--------|-----------------------|---------------------|
+| **Rain** (LM393 module) | `rain_moisture` (%), `rain_state` (0/1), `rain_adc` (raw) | AO → GPIO35, DO → GPIO16 |
+| **Wind** (analog anemometer) | `wind_speed` (m/s, mean), `wind_gust` (m/s, max), `wind_voltage` (V) | AO → GPIO34 (via divider) |
+
+Both are **switched off at compile time by default** – they are not part of the sensor.community reference hardware. Turn them on in `Features.h` (`FEATURE_SENSOR_RAIN` / `FEATURE_SENSOR_WIND`); only then do they appear in the web UI, where they still have to be enabled per device.
+
+Analog inputs must be on **ADC1** (GPIO32–39) – ADC2 is unusable while WiFi is active – and must not exceed **3.3 V**: run the rain module in 3.3 V mode, feed the anemometer through the R1/R2 divider.
+
+Calibration in the web UI (*Sensors → Calibration*):
+
+- **Rain:** `rain_dry_adc` / `rain_wet_adc` – the raw values of the dry and the soaking-wet plate; in between the firmware interpolates to 0–100 %. Read the current raw value off `/values` (`rain_adc`).
+- **Wind:** `wind_divider` (divider factor, 1.5 for 10k/20k), `wind_factor` (m/s per volt at the sensor) and `wind_offset` (dead voltage at standstill). Speed = (U_ADC × divider − offset) × factor.
+
+Wind is averaged over the whole measurement cycle (plus the maximum as gust), so – like the particulate-matter sensors – it only appears at the end of a cycle. Rain is read instantaneously and is therefore also part of the shorter MQTT interim updates.
+
+> Neither sensor is part of the sensor.community schema (no API pin), so both are skipped for sensor.community. They *are* sent to MQTT, Madavi, InfluxDB, custom API and CSV.
+>
+> On the **ESP8266** there is only one ADC pin (A0). If both sensors are enabled, rain wins and wind is switched off with a warning in the log.
+
 ## MQTT Topics (example)
 
 ```
@@ -96,6 +123,10 @@ airrohr/<node-id>/SDS/PM2.5         3.50
 airrohr/<node-id>/BME280/temperature 21.8
 airrohr/<node-id>/BME280/humidity    55.0
 airrohr/<node-id>/BME280/pressure    100790
+airrohr/<node-id>/rain/moisture      12.5
+airrohr/<node-id>/rain/state         0
+airrohr/<node-id>/wind/speed         3.4
+airrohr/<node-id>/wind/gust          7.1
 airrohr/<node-id>/device/{ssid,ip,rssi,uptime,heap,firmware}
 airrohr/<node-id>/status/{sensorcommunity,madavi,mqtt}   ok | error
 ```
@@ -117,6 +148,8 @@ Detailed guide incl. schematic in the [original wiki: NodeMCU v2/v3 pinout](http
 | **DHT22** | Data→D7 (GPIO13), VCC→3V3, GND→GND |
 | **DS18B20** (OneWire, shares D7 with DHT22) | DQ→D7 (GPIO13), VCC→3V3/VU, GND→GND |
 | **GPS NEO-6M** (serial) | TX→D5 (RX, GPIO14), RX→D6 (TX, GPIO12), VCC→3V3, GND→GND |
+| **Rain LM393** | AO→A0, DO→D0 (GPIO16), VCC→3V3, GND→GND |
+| **Anemometer** (analog) | Signal→A0 (via divider), GND→GND |
 
 > ⚠️ GPS combined with a PM sensor is considered unstable even in the original – use at your own risk.
 

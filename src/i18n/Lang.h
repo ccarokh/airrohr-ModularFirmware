@@ -44,13 +44,14 @@
 	/* Config form: tabs */                                                    \
 	X(TabWifi) X(TabSensors) X(TabTargets) X(TabSettings)                      \
 	/* Config form: groups */                                                  \
-	X(GrpParticulate) X(GrpClimate) X(GrpNoise) X(GrpPosition)                 \
+	X(GrpParticulate) X(GrpClimate) X(GrpNoise) X(GrpPosition) X(GrpWeather)   \
 	X(GrpCalibration) X(GrpScMadavi) X(GrpMqtt) X(GrpInflux) X(GrpCustomApi)   \
 	X(GrpOtherServices) X(GrpGeneral) X(GrpAccess) X(GrpDisplay) X(GrpApMode)  \
 	/* Config form: field labels */                                            \
 	X(FldSsid) X(FldWifiPassword)                                              \
 	X(FldNpmFulltime) X(FldTempCorrection) X(FldHeightAboveSealevel)           \
-	X(FldDnmsCorrection)                                                       \
+	X(FldDnmsCorrection) X(FldRainRead) X(FldWindRead) X(FldRainDryAdc)        \
+	X(FldRainWetAdc) X(FldWindFactor) X(FldWindDivider) X(FldWindOffset)       \
 	X(FldSend2Dusti) X(FldSslDusti) X(FldSend2Madavi) X(FldSslMadavi)          \
 	X(FldSend2Mqtt) X(FldBrokerHost) X(FldPort) X(FldUser) X(FldPassword)      \
 	X(FldTopicPrefix) X(FldTls) X(FldHaDiscovery) X(FldMqttInterval)           \
@@ -65,6 +66,8 @@
 	X(ValTemperature) X(ValHumidity) X(ValPressure) X(ValPressureSealevel)     \
 	X(ValDewPoint) X(ValCo2) X(ValNoiseLaeq) X(ValNoiseMin) X(ValNoiseMax)     \
 	X(ValLatitude) X(ValLongitude) X(ValAltitude) X(ValTimestamp)              \
+	X(ValRainMoisture) X(ValRainState) X(ValRainAdc)                           \
+	X(ValWindSpeed) X(ValWindGust) X(ValWindVoltage)                           \
 	X(ValDeviceSsid) X(ValDeviceIp) X(ValDeviceRssi) X(ValDeviceUptime)        \
 	X(ValDeviceHeap) X(ValDeviceFirmware)
 

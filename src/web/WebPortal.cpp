@@ -433,6 +433,14 @@ static void valueInfo(const String &vt, String &label, String &unit, float &scal
 	if (vt == "device_heap")     { label = TR(Str::ValDeviceHeap); unit = "Bytes"; return; }
 	if (vt == "device_firmware") { label = TR(Str::ValDeviceFirmware); return; }
 
+	// Weather sensors (rain/wind) - before the generic checks below.
+	if (vt == "rain_moisture")   { label = TR(Str::ValRainMoisture); unit = "%"; return; }
+	if (vt == "rain_state")      { label = TR(Str::ValRainState); return; }
+	if (vt == "rain_adc")        { label = TR(Str::ValRainAdc); return; }
+	if (vt == "wind_speed")      { label = TR(Str::ValWindSpeed); unit = "m/s"; return; }
+	if (vt == "wind_gust")       { label = TR(Str::ValWindGust); unit = "m/s"; return; }
+	if (vt == "wind_voltage")    { label = TR(Str::ValWindVoltage); unit = "V"; return; }
+
 	// Derived values (before the generic "pressure" check!)
 	if (vt.indexOf("sealevel") >= 0)  { label = TR(Str::ValPressureSealevel); unit = "hPa"; scale = 0.01f; return; }
 	if (vt.indexOf("dew_point") >= 0) { label = TR(Str::ValDewPoint); unit = "°C"; return; }
@@ -494,7 +502,7 @@ void WebPortal::handleValues()
 		{ &cfg.sps30_read, "SPS30" }, { &cfg.dht_read, "DHT" }, { &cfg.htu21d_read, "HTU21D" },
 		{ &cfg.bmp_read, "BMP180" }, { &cfg.bmx280_read, "BMx280" }, { &cfg.sht3x_read, "SHT3X" },
 		{ &cfg.scd30_read, "SCD30" }, { &cfg.ds18b20_read, "DS18B20" }, { &cfg.dnms_read, "DNMS" },
-		{ &cfg.gps_read, "GPS" },
+		{ &cfg.gps_read, "GPS" }, { &cfg.rain_read, "RAIN" }, { &cfg.wind_read, "WIND" },
 	};
 
 	String out = pageStart(String(TR(Str::ValuesTitle)));

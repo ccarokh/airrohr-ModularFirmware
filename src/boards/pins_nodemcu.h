@@ -34,3 +34,17 @@
 #ifndef PPD_PIN_PM2
   #define PPD_PIN_PM2 D6
 #endif
+
+// --- Weather sensors -------------------------------------------------------
+// The ESP8266 has exactly ONE analog input (A0). Rain AND wind therefore
+// cannot be read at the same time - whichever is enabled gets A0; enabling
+// both is rejected with a warning by the SensorManager.
+#ifndef PIN_RAIN_AO
+  #define PIN_RAIN_AO A0
+#endif
+#ifndef PIN_RAIN_DO
+  #define PIN_RAIN_DO D0   // GPIO16
+#endif
+#ifndef PIN_WIND_AO
+  #define PIN_WIND_AO A0
+#endif

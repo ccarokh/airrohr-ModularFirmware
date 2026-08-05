@@ -34,9 +34,16 @@ static const Entry LIST[] = {
 	L("ds18b20_read", "DS18B20", TabSensors, GrpClimate),
 	L("dnms_read", "DNMS", TabSensors, GrpNoise),
 	L("gps_read", "GPS", TabSensors, GrpPosition),
+	T("rain_read", FldRainRead, TabSensors, GrpWeather),
+	T("wind_read", FldWindRead, TabSensors, GrpWeather),
 	T("temp_correction", FldTempCorrection, TabSensors, GrpCalibration),
 	T("height_above_sealevel", FldHeightAboveSealevel, TabSensors, GrpCalibration),
 	T("dnms_correction", FldDnmsCorrection, TabSensors, GrpCalibration),
+	T("rain_dry_adc", FldRainDryAdc, TabSensors, GrpCalibration),
+	T("rain_wet_adc", FldRainWetAdc, TabSensors, GrpCalibration),
+	T("wind_divider", FldWindDivider, TabSensors, GrpCalibration),
+	T("wind_factor", FldWindFactor, TabSensors, GrpCalibration),
+	T("wind_offset", FldWindOffset, TabSensors, GrpCalibration),
 
 	// --- Data destinations ---
 	T("send2dusti", FldSend2Dusti, TabTargets, GrpScMadavi),

@@ -93,6 +93,12 @@ const Field CONFIG_FIELDS[] = {
 #if FEATURE_SENSOR_GPS
 	F_BOOL(gps_read),
 #endif
+#if FEATURE_SENSOR_RAIN
+	F_BOOL(rain_read), F_STR(rain_dry_adc), F_STR(rain_wet_adc),
+#endif
+#if FEATURE_SENSOR_WIND
+	F_BOOL(wind_read), F_STR(wind_divider), F_STR(wind_factor), F_STR(wind_offset),
+#endif
 
 #if FEATURE_SENDER_SENSORCOMMUNITY
 	F_BOOL(send2dusti), F_BOOL(ssl_dusti),

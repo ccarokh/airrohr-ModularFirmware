@@ -20,6 +20,8 @@
 #include "SpsSensor.h"
 #include "DnmsSensor.h"
 #include "GpsSensor.h"
+#include "RainSensor.h"
+#include "WindSensor.h"
 
 #include "../util/Derived.h"
 
@@ -152,6 +154,25 @@ void SensorManager::begin()
 #if FEATURE_SENSOR_GPS
 	if (cfg.gps_read) {
 		_sensors.emplace_back(new GpsSensor(gpsSerial, PIN_GPS_RX, PIN_GPS_TX));
+	}
+#endif
+
+	// Analog weather sensors. On the ESP8266 both would share the single ADC
+	// pin A0 -> rain wins, wind is refused (would otherwise deliver nonsense).
+#if defined(ESP8266) && FEATURE_SENSOR_RAIN && FEATURE_SENSOR_WIND
+	if (cfg.rain_read && cfg.wind_read && PIN_RAIN_AO == PIN_WIND_AO) {
+		LOG_WARN(F("ESP8266: nur ein ADC-Pin - Wind deaktiviert (Regen hat Vorrang)"));
+		cfg.wind_read = false;
+	}
+#endif
+#if FEATURE_SENSOR_RAIN
+	if (cfg.rain_read) {
+		_sensors.emplace_back(new RainSensor(PIN_RAIN_AO, PIN_RAIN_DO));
+	}
+#endif
+#if FEATURE_SENSOR_WIND
+	if (cfg.wind_read) {
+		_sensors.emplace_back(new WindSensor(PIN_WIND_AO));
 	}
 #endif
 

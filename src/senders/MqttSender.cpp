@@ -24,6 +24,9 @@ const char *MqttSender::unitForValueType(const String &vt)
 	if (vt.indexOf("noise") >= 0)                         return "dB(A)";
 	if (vt.indexOf("height") >= 0)                        return "m";
 	if (vt == "signal")                                   return "dBm";
+	if (vt == "rain_moisture")                            return "%";
+	if (vt == "wind_speed" || vt == "wind_gust")          return "m/s";
+	if (vt == "wind_voltage")                             return "V";
 	if (vt.indexOf("_N") >= 0)                             return "#/cm³";  // particle count
 	int p = vt.lastIndexOf('P');                                           // particulate matter mass
 	if (p >= 0 && p + 1 < (int)vt.length() && isDigit(vt.charAt(p + 1)))
