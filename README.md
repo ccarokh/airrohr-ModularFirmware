@@ -1,0 +1,154 @@
+# airRohr – Modular Firmware
+
+A modular C++/PlatformIO rewrite of the [airRohr particulate-matter firmware](https://github.com/opendata-stuttgart/sensors-software/tree/master/airrohr-firmware) by the [Sensor.Community](https://sensor.community/) project (formerly luftdaten.info) – with **built-in MQTT** as its core feature.
+
+The original firmware is a single ~6300-line `.ino` file. This rewrite splits it into small, testable C++ modules (largest file < 200 lines) and runs **dual-platform on ESP32 and ESP8266**.
+
+> **Why a rewrite?** Built-in MQTT was deliberately left out of the original ([issue #33](https://github.com/opendata-stuttgart/sensors-software/issues/33): memory footprint, inconsistent payload/auth formats). On the ESP32 with enough flash – and, thanks to clean modularization, on the ESP8266 too – this is no longer a blocker.
+
+---
+
+## Features
+
+- **One MQTT topic per measurement** (`airrohr/<node-id>/<sensor>/<measurement>`), e.g. `airrohr/esp8266-1908787/SDS/PM2.5`
+- **Home Assistant MQTT discovery** (optional) – entities appear in HA automatically
+- **Separate, shorter MQTT interval** for live values (e.g. every 30 s), independent of the cloud send cycle (145 s)
+- **Per-backend send status** via MQTT (`status/sensorcommunity`, `status/madavi`, `status/mqtt` = `ok`/`error`)
+- **All sensors of the original**: SDS011, PMSx003, HPM, NPM, PPD42, IPS, SPS30, DHT22, HTU21D, BMP180, BMP280/BME280, SHT3x, SCD30, DS18B20, DNMS (noise), GPS
+- **All data targets**: sensor.community, Madavi.de, OpenSenseMap, Feinstaub-App, aircms, InfluxDB, custom HTTP JSON, CSV over USB, MQTT
+- **Derived values**: dew point + sea-level pressure (to MQTT/Madavi/InfluxDB; sensor.community computes sea-level pressure itself)
+- **Web configuration portal** (tabs, WiFi scan, DHCP/static), **captive portal** in AP mode for initial setup
+- **Web OTA**: firmware update by file upload in the browser (no USB required)
+- **OLED display** (SSD1306/SH1106) and **LCD** (1602/2004), NTP, Prometheus `/metrics`
+- **Compile-time feature switches** (`Features.h`): disable unused sensors/senders/display/TLS to shrink flash. Disabled features automatically disappear from the web UI.
+
+## Supported Boards
+
+| Platform | Board | Toolchain |
+|----------|-------|-----------|
+| ESP32 | `esp32dev` (e.g. CP210x) | `espressif32` |
+| ESP8266 | NodeMCU v2 (`nodemcuv2`) | `espressif8266` |
+
+Pin assignments per board in [`src/boards/`](src/boards/) (`pins_esp32dev.h`, `pins_nodemcu.h`). Override via `-D BOARD_PINS="boards/pins_x.h"`.
+
+## Prebuilt Firmware Images
+
+Prebuilt `.bin` files are available under **[Releases](../../releases)** – for ESP32 and ESP8266/NodeMCU. They can be flashed directly via **web OTA** (`/update`) or over USB for the first flash. Building yourself is only necessary if you change the feature set.
+
+## Build & Flash
+
+Requires [PlatformIO](https://platformio.org/) (`pip install --user platformio`).
+
+```bash
+# ESP32 (full feature set)
+pio run -e esp32dev -t upload
+
+# ESP8266 NodeMCU
+pio run -e esp8266test -t upload --upload-port /dev/ttyUSB0
+```
+
+> **First flash:** after a partition change, run `pio run -t erase` once (otherwise a boot loop caused by the old filesystem). After that the firmware boots cleanly and creates the default config.
+
+Additional env variants in [`platformio.ini`](platformio.ini):
+- `esp32dev` – all features
+- `esp32dev_minimal` / `esp8266test` – reduced feature set (an example of the `Features.h` switches)
+
+After the first flash, further updates are conveniently done via **web OTA** (`/update`).
+
+## Configuration
+
+If no (reachable) WiFi is configured, the device opens its own **access point + captive portal** on startup: an open WiFi network in the form `airRohr-<sensor-id>`. When a client connects, it is redirected to the sensor's web server at `http://192.168.4.1/` – enter WiFi and (optionally) the MQTT broker there.
+
+> The open configuration AP turns itself off after a few minutes. To re-enable it, power-cycle the board.
+
+Afterwards the full configuration is available at `http://<device-ip>/config`. Configurable options include:
+
+- WiFi (with network scan, DHCP or static IP)
+- which sensors to poll and at what interval
+- which APIs/backends to send to
+- display options
+
+Key MQTT settings (tab *Data targets → MQTT*): broker/port, username/password, optional TLS, topic prefix, Home Assistant discovery, MQTT interval.
+
+> Only compiled-in features appear in the web UI. If you disable a sensor or sender via `Features.h`/`build_flags`, it also disappears from the configuration.
+
+## MQTT Topics (example)
+
+```
+airrohr/<node-id>/SDS/PM10          6.40
+airrohr/<node-id>/SDS/PM2.5         3.50
+airrohr/<node-id>/BME280/temperature 21.8
+airrohr/<node-id>/BME280/humidity    55.0
+airrohr/<node-id>/BME280/pressure    100790
+airrohr/<node-id>/device/{ssid,ip,rssi,uptime,heap,firmware}
+airrohr/<node-id>/status/{sensorcommunity,madavi,mqtt}   ok | error
+```
+
+Particulate-matter keys are mapped to readable names (`P1→PM10`, `P2→PM2.5`, `N05→NC0.5`, …).
+
+## Wiring (ESP8266 NodeMCU)
+
+On the NodeMCU this firmware uses the **airrohr standard pinout** – so the wiring is identical to the original firmware. (For ESP32 pins see [`src/boards/pins_esp32dev.h`](src/boards/pins_esp32dev.h).)
+
+Detailed guide incl. schematic in the [original wiki: NodeMCU v2/v3 pinout](https://github.com/opendata-stuttgart/meta/wiki/Pinouts-NodeMCU-v2,-v3).
+
+> **Serial sensors:** RX/TX are always crossed (TX on one side → RX on the other).
+
+| Sensor | Connection |
+|--------|-----------|
+| **SDS011 / PMSx / Honeywell** (serial) | TX→D1 (GPIO5), RX→D2 (GPIO4), GND→GND, 5V→VU |
+| **BMP180 / BMP280 / BME280 / HTU21D / SHT3x / SPS30 / LCD / OLED** (I²C) | SDA→D3 (GPIO0), SCL→D4 (GPIO2), VCC→3V3 (SPS30/LCD/OLED: VU/5V), GND→GND |
+| **DHT22** | Data→D7 (GPIO13), VCC→3V3, GND→GND |
+| **DS18B20** (OneWire, shares D7 with DHT22) | DQ→D7 (GPIO13), VCC→3V3/VU, GND→GND |
+| **GPS NEO-6M** (serial) | TX→D5 (RX, GPIO14), RX→D6 (TX, GPIO12), VCC→3V3, GND→GND |
+
+> ⚠️ GPS combined with a PM sensor is considered unstable even in the original – use at your own risk.
+
+## Sensor.Community API Pins
+
+To run multiple sensors, Sensor.Community expects a *virtual* API pin during registration at [devices.sensor.community](https://devices.sensor.community/). The firmware uses these fixed values (same as the original):
+
+| Sensor | API pin |
+|--------|:------:|
+| HPM / PMS / SDS011 / SPS30 | 1 |
+| BMP180 / BMP280 | 3 |
+| DHT22 / HTU21D / SHT3x | 7 |
+| GPS (NEO-6M) | 9 |
+| BME280 | 11 |
+| DS18B20 | 13 |
+| DNMS (noise) | 15 |
+
+## Debug & CSV over USB Serial
+
+On the USB port the device provides human-readable debug output at **115200 baud, 8N1**; the verbosity is set in the configuration (`debug`). The CSV sender (data target *CSV*) outputs the measurements as CSV over the same serial port – set `debug` to *None* so the two don't interfere.
+
+> **Note on the DHT22:** originally an indoor sensor; outdoors it tends to get stuck at 99.9 % rel. humidity after condensation and is UV-sensitive. For outdoor use, **BME280** or **SHT3x** are the better choice.
+
+## Project Structure
+
+```
+src/
+  main.cpp            Loop: sensors → collect → senders → display
+  Config.*            settings struct + field table + LittleFS persistence
+  Features.h          compile-time feature switches
+  Board.*             platform abstraction (pins, chip ID, serial)
+  boards/             pin files per board
+  sensors/            ISensor interface + one driver per sensor
+  senders/            IDataSender interface + one backend each
+  net/                WiFi manager, NTP
+  web/                configuration portal, web OTA
+  display/            OLED/LCD
+  util/               derived values (dew point, sea-level pressure)
+lib/                  bundled sensor libraries
+```
+
+## Relation to the Original
+
+This firmware is a standalone rewrite, but it closely follows the original firmware and stays compatible with its data formats (sensor.community/Madavi payload, X-Sensor/X-Pin).
+
+- **Original firmware:** <https://github.com/opendata-stuttgart/sensors-software/tree/master/airrohr-firmware>
+- **Sensor.Community project:** <https://sensor.community/>
+
+## License
+
+**GNU General Public License v3.0** – adopted from the original firmware. See [LICENSE](LICENSE) or the [original](https://github.com/opendata-stuttgart/sensors-software/blob/master/airrohr-firmware/LICENSE.md).
