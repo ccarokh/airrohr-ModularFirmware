@@ -29,6 +29,11 @@
   #define FEATURE_DISPLAY         0
   #define FEATURE_LANG_EN         0
 
+#elif defined(PROFILE_CARRIER)
+  // airRohr-ESP32 carrier board: full set plus the two weather sensors.
+  #define FEATURE_SENSOR_RAIN 1
+  #define FEATURE_SENSOR_WIND 1
+
 #elif defined(PROFILE_ESP8266)
   // Reduced set for the ESP8266: SDS011 + MQTT/sensor.community/Madavi,
   // no display (RAM), climate sensors off.

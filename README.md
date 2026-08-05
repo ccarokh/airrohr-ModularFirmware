@@ -37,7 +37,17 @@ Pin assignments per board in [`src/boards/`](src/boards/) (`pins_esp32dev.h`, `p
 
 ## Prebuilt Firmware Images
 
-Prebuilt `.bin` files are available under **[Releases](../../releases)** – for ESP32 and ESP8266/NodeMCU. They can be flashed directly via **web OTA** (`/update`) or over USB for the first flash. Building yourself is only necessary if you change the feature set.
+Every release tag (`v1.1.0`, …) is built by CI and the binaries are attached to the **[Releases](../../releases)** page:
+
+| File | Target |
+|------|--------|
+| `airrohr-esp32-v<version>.bin` | ESP32, full feature set |
+| `airrohr-esp32-carrier-v<version>.bin` | ESP32 carrier board, additionally rain + wind |
+| `airrohr-esp8266-nodemcu-v<version>.bin` | ESP8266 / NodeMCU, reduced set |
+
+Alongside them a `.sha256` file with the checksums. Flash directly via **web OTA** (`/update`), or over USB for the first flash. Building yourself is only necessary if you change the feature set.
+
+Locally the same artifacts come out of `./tools/build-release.sh` (file names follow `AIRROHR_VERSION` in `src/Board.h`).
 
 ## Build & Flash
 
@@ -59,6 +69,7 @@ pio run -e esp8266test -t upload --upload-port /dev/ttyUSB0
 |-----|---------|----------|
 | `esp32dev` | – | all features |
 | `esp32dev_minimal` | `PROFILE_MINIMAL` | SDS011 + BME280, sensor.community + MQTT, no display |
+| `esp32_carrier` | `PROFILE_CARRIER` | full set plus rain + wind |
 | `esp8266test` | `PROFILE_ESP8266` | reduced set for the smaller flash/RAM budget |
 
 A profile flips the group defaults (`FEATURE_SENSORS_DEFAULT`, `FEATURE_SENDERS_DEFAULT`) and lists only its exceptions. Add a variant of your own there, not in `platformio.ini`.
@@ -103,7 +114,7 @@ Two analog sensors that the original firmware does not support, designed for the
 | **Rain** (LM393 module) | `rain_moisture` (%), `rain_state` (0/1), `rain_adc` (raw) | AO → GPIO35, DO → GPIO16 |
 | **Wind** (analog anemometer) | `wind_speed` (m/s, mean), `wind_gust` (m/s, max), `wind_voltage` (V) | AO → GPIO34 (via divider) |
 
-Both are **switched off at compile time by default** – they are not part of the sensor.community reference hardware. Turn them on in `Features.h` (`FEATURE_SENSOR_RAIN` / `FEATURE_SENSOR_WIND`); only then do they appear in the web UI, where they still have to be enabled per device.
+Both are **switched off at compile time by default** – they are not part of the sensor.community reference hardware. Turn them on in `Features.h` (`FEATURE_SENSOR_RAIN` / `FEATURE_SENSOR_WIND`), use `pio run -e esp32_carrier`, or flash the prebuilt `airrohr-esp32-carrier-*.bin`. Only then do they appear in the web UI, where they still have to be enabled per device.
 
 Analog inputs must be on **ADC1** (GPIO32–39) – ADC2 is unusable while WiFi is active – and must not exceed **3.3 V**: run the rain module in 3.3 V mode, feed the anemometer through the R1/R2 divider.
 
