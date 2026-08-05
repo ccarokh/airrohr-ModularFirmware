@@ -6,7 +6,7 @@
 #include <Arduino.h>
 
 // Firmware identifier
-#define AIRROHR_VERSION "AR-modular-1.1.0"
+#define AIRROHR_VERSION "AR-modular-1.1.1"
 
 #if defined(ESP32)
   #define SENSOR_BASENAME "esp32-"
