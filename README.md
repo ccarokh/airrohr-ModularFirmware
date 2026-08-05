@@ -22,7 +22,7 @@ The original firmware is a single ~6300-line `.ino` file. This rewrite splits it
 - **Web configuration portal** (tabs, WiFi scan, DHCP/static), **captive portal** in AP mode for initial setup
 - **Web OTA**: firmware update by file upload in the browser (no USB required)
 - **OLED display** (SSD1306/SH1106) and **LCD** (1602/2004), NTP, Prometheus `/metrics`
-- **Compile-time feature switches** (`Features.h`): disable unused sensors/senders/display/TLS to shrink flash. Disabled features automatically disappear from the web UI.
+- **Compile-time feature switches** (`Features.h`, the single source of truth for what a build contains): disable unused sensors/senders/display/TLS to shrink flash. Disabled features automatically disappear from the web UI.
 
 ## Supported Boards
 
@@ -53,9 +53,17 @@ pio run -e esp8266test -t upload --upload-port /dev/ttyUSB0
 
 > **First flash:** after a partition change, run `pio run -t erase` once (otherwise a boot loop caused by the old filesystem). After that the firmware boots cleanly and creates the default config.
 
-Additional env variants in [`platformio.ini`](platformio.ini):
-- `esp32dev` – all features
-- `esp32dev_minimal` / `esp8266test` – reduced feature set (an example of the `Features.h` switches)
+**What ends up in a build is decided in [`src/Features.h`](src/Features.h) – nowhere else.** `platformio.ini` names at most a *profile*; what that profile contains is defined in `Features.h`:
+
+| Env | Profile | Contents |
+|-----|---------|----------|
+| `esp32dev` | – | all features |
+| `esp32dev_minimal` | `PROFILE_MINIMAL` | SDS011 + BME280, sensor.community + MQTT, no display |
+| `esp8266test` | `PROFILE_ESP8266` | reduced set for the smaller flash/RAM budget |
+
+A profile flips the group defaults (`FEATURE_SENSORS_DEFAULT`, `FEATURE_SENDERS_DEFAULT`) and lists only its exceptions. Add a variant of your own there, not in `platformio.ini`.
+
+`-D FEATURE_X=0` on the command line still overrides everything, but that is for quick experiments – anything permanent belongs in `Features.h`.
 
 After the first flash, further updates are conveniently done via **web OTA** (`/update`).
 
@@ -80,12 +88,7 @@ Key MQTT settings (tab *Data targets → MQTT*): broker/port, username/password,
 
 The web UI ships in **German and English**; the language is chosen at runtime under *Settings → General → Language* and takes effect immediately (no reflash). Unlike the original firmware – which builds one binary per language via `-DINTL_DE` – the compiled-in languages are all available in the same image.
 
-Which languages end up in the binary is a compile-time decision, because each one costs roughly **3–4 kB of flash**:
-
-```bash
-pio run -e esp32dev                      # German + English (default)
-pio run -e esp32dev -a "-D FEATURE_LANG_EN=0"   # German only
-```
+Which languages end up in the binary is a compile-time decision in `Features.h` (`FEATURE_LANG_DE`, `FEATURE_LANG_EN`), because each one costs roughly **3–4 kB of flash**.
 
 The **first** language enabled in `Features.h` is the fallback when the stored code (`current_lang`) is not compiled in.
 
